@@ -1,0 +1,16 @@
+`timescale 1ns / 1ps
+
+module uart_transmitter(reset, clk, Tx_DATA, baud_select, Tx_WR, Tx_EN, TxD, Tx_BUSY);
+input reset, clk;
+input [7:0] Tx_DATA;
+input [2:0] baud_select;
+input Tx_EN;
+input Tx_WR;
+output TxD;
+output Tx_BUSY;
+wire Tx_sample_ENABLE;
+
+uart_transmitter_FSM uart_transmitter_FSM_inst(reset, clk, Tx_DATA, Tx_WR, Tx_EN, Tx_sample_ENABLE, TxD, Tx_BUSY);
+baud_controller baud_controller_tx_inst(reset, clk, baud_select, Tx_sample_ENABLE);
+
+endmodule

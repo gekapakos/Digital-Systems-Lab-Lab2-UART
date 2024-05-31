@@ -1,0 +1,17 @@
+`timescale 1ns / 1ps
+
+module uart_receiver(reset, clk, Rx_DATA, baud_select, Rx_EN, RxD, Rx_FERROR, Rx_PERROR, Rx_VALID);
+input reset, clk;
+input [2:0] baud_select;
+input Rx_EN;
+input RxD;
+output [7:0] Rx_DATA;
+output Rx_FERROR; // Framing Error //
+output Rx_PERROR; // Parity Error //
+output Rx_VALID; // Rx_DATA is Valid //
+wire Rx_sample_ENABLE;
+
+uart_receiver_FSM(reset, clk, Rx_DATA, baud_select, Rx_EN, RxD, Rx_sample_ENABLE, Rx_FERROR, Rx_PERROR, Rx_VALID);
+baud_controller baud_controller_rx_inst(reset, clk, baud_select, Rx_sample_ENABLE);
+
+endmodule

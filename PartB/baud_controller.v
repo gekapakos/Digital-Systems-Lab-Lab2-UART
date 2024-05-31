@@ -1,0 +1,60 @@
+`timescale 1ns / 1ps
+
+module baud_controller(reset, clk, baud_select, sample_ENABLE);
+input reset, clk;
+input [2:0] baud_select;
+output reg sample_ENABLE;
+
+reg [14:0] size;//max cycles 
+reg [14:0] count;
+
+/*Depending on the baud selection take the right baud rate*/
+always@ (baud_select) begin
+	case(baud_select)
+	3'b000: begin 
+			size <= 20_833;
+			end
+	3'b001: begin 
+			size <= 5_208;
+			end
+	3'b010: begin 
+			size <= 1_302;
+			end
+	3'b011: begin 
+			size <= 651;
+			end
+	3'b100: begin 
+			size <= 326;
+			end
+	3'b101: begin 
+			size <= 163;
+			end
+	3'b110: begin 
+			size <= 109;
+			end
+	3'b111: begin 
+			size <= 54;
+			end
+	default: begin 
+			 size <= 20_833;
+			 end
+	endcase
+end
+
+/*15 bit counter*/
+always @ (posedge clk or posedge reset) begin  
+	if (reset) begin
+		count <= 15'b000000000000000;
+		sample_ENABLE <= 1'b0;
+	end
+    else if(count == size) begin/*When the counter reaches max cycles then activate sample ENABLE*/
+		sample_ENABLE <= 1'b1;
+		count <=15'b000000000000000;
+	end
+	else begin
+		count <= count + 15'b000000000000001;
+		sample_ENABLE <= 1'b0;
+	end
+end 
+
+endmodule

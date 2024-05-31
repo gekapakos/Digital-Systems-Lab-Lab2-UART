@@ -1,0 +1,34 @@
+`timescale 1ns / 1ps
+
+
+module uart_transmitter_tb;
+
+reg reset, clk, Tx_EN;
+reg Tx_WR;
+reg [7:0] Tx_DATA;
+reg [2:0] baud_select;
+wire TxD, Tx_BUSY;
+
+uart_transmitter uart_transmitter_u(.reset(reset), .clk(clk), .Tx_DATA(Tx_DATA), .baud_select(baud_select), .Tx_WR(Tx_WR), .Tx_EN(Tx_EN), .TxD(TxD), .Tx_BUSY(Tx_BUSY));
+
+initial begin
+	clk = 0;
+	forever #5 clk = ~clk;
+end
+
+/*Testbench transmites 2 symbols with different baud rates*/
+initial begin
+	reset = 1'b1;
+	#100 reset = 1'b0;
+	baud_select = 3'b111;
+	Tx_DATA = 8'b10101010;
+	Tx_EN = 1'b1;
+	#545 Tx_WR = 1'b1;
+	#11 Tx_WR = 1'b0;
+	#97880 baud_select = 3'b110;
+	#569 Tx_WR = 1'b1;
+	Tx_DATA = 8'b01010101;
+	#11 Tx_WR = 1'b0;
+end
+
+endmodule

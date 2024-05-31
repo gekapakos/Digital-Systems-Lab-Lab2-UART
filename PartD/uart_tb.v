@@ -1,0 +1,102 @@
+`timescale 1ns / 1ps
+
+module uart_tb;
+
+reg reset, clk, Tx_EN, Tx_WR;
+reg [2:0] baud_select;
+reg Rx_EN;
+reg [7:0] Tx_DATA;
+wire [7:0] Rx_DATA;
+wire Rx_FERROR; // Framing Error //
+wire Rx_PERROR; // Parity Error //
+wire Rx_VALID; // Rx_DATA is Valid //
+
+parameter state_AA = 0,
+		  state_55 = 1,
+		  state_CC = 2,
+		  state_89 = 3;
+
+reg [1:0] state, next_state;
+
+uart uart_utd(.reset(reset), .clk(clk), .Tx_DATA(Tx_DATA), .baud_select(baud_select), .Tx_WR(Tx_WR), .Tx_EN(Tx_EN), .Rx_EN(Rx_EN), .Rx_DATA(Rx_DATA), .Rx_FERROR(Rx_FERROR), .Rx_PERROR(Rx_PERROR), .Rx_VALID(Rx_VALID),.Tx_BUSY(Tx_BUSY));
+
+initial begin
+	clk = 0;
+	forever #5 clk = ~clk;
+end
+
+initial begin
+	reset = 1;
+	#500 reset = 0;
+	Rx_EN = 1;
+	Tx_EN = 1;
+	baud_select = 3'b111;
+end
+
+always @(posedge clk or posedge reset) begin
+	if(reset) begin
+		state <= state_AA;
+	end
+	else
+		state <= next_state;
+end
+
+/*FSM for the automatic testbench*/
+always@ (Tx_BUSY or Tx_WR) begin
+	next_state = state;
+	case(state)
+	state_AA: begin
+			Tx_WR = 1'b1;
+			if(Tx_WR) begin
+				Tx_DATA = 8'b10101010;
+				Tx_WR = 1'b0;
+			end
+			if(Tx_BUSY) 
+				next_state = state_AA;
+			else begin
+				next_state = state_55;
+				Tx_WR = 1'b1;
+			end
+			end
+	state_55: begin
+			if(Tx_WR) begin
+				Tx_DATA = 8'b01010101;
+				Tx_WR = 1'b0;
+			end
+			if(Tx_BUSY) 
+				next_state = state_55;
+			else begin
+				next_state = state_CC;
+				Tx_WR = 1'b1;
+			end
+			end
+	state_CC: begin
+			Tx_WR = 1'b1;
+			if(Tx_WR) begin
+				Tx_DATA = 8'b11001100;
+				Tx_WR = 1'b0;
+			end
+			if(Tx_BUSY) 
+				next_state = state_CC;
+			else begin
+				next_state = state_89;
+				Tx_WR = 1'b1;
+			end
+			end
+	state_89: begin
+			Tx_WR = 1'b1;
+			if(Tx_WR) begin
+				Tx_DATA = 8'b10001001;
+				Tx_WR = 1'b0;
+			end
+			if(Tx_BUSY) 
+				next_state = state_89;
+			else begin
+				next_state = state_AA;
+				Tx_WR = 1'b1;
+			end
+			end
+	endcase
+end
+
+endmodule

@@ -1,0 +1,148 @@
+`timescale 1ns / 1ps
+
+module uart_transmitter_FSM(reset, clk, Tx_DATA, Tx_WR, Tx_EN, Tx_sample_ENABLE, TxD, Tx_BUSY);
+input reset, clk;
+input [7:0] Tx_DATA;
+input Tx_EN;
+input Tx_WR;
+input Tx_sample_ENABLE;
+output TxD;
+output Tx_BUSY;
+
+reg TxD, Tx_BUSY;
+
+/*Declare the states in the fsm*/
+parameter 	idle = 0,
+			start = 1,
+			trans = 2,
+			parity = 3,
+			stop = 4;
+
+reg [2:0] decision, decision_next;/*decision is state and decision_next next_state*/
+reg [3:0] count_s, count_s_next, count_n, count_n_next;
+reg [7:0] buffer, buffer_next;/*used to store data so that we can alter them*/
+reg add, add_next;/*parity bit*/
+
+/*FSM for sequential logic*/
+always@ (posedge clk or posedge reset) begin
+	if(reset)
+	begin
+		decision <= idle;
+		count_s <= 4'b0000;
+		count_n <= 4'b0000;
+		buffer <= 8'b0000000;
+		add <= 1'b0;
+	end
+	else begin
+		decision <= decision_next;
+		count_s <= count_s_next;
+		count_n <= count_n_next;
+		buffer <= buffer_next;
+		add <= add_next;
+	end
+end
+
+/*FSM for combinational logic*/
+always@ (Tx_EN or Tx_WR or decision or Tx_sample_ENABLE or count_s or count_n or buffer or add or Tx_DATA) begin
+	decision_next = decision;
+	count_s_next = count_s;
+	count_n_next = count_n;
+	buffer_next = buffer;
+	add_next = add;
+	TxD = 1;
+	Tx_BUSY = 0;
+	if(Tx_EN) begin
+		case(decision)
+		idle: begin 
+				  TxD = 1;
+				  Tx_BUSY = 0;
+				  if(Tx_sample_ENABLE && Tx_WR) begin
+					decision_next = start;
+					count_s_next = 0;
+					buffer_next = Tx_DATA;
+				  end
+				  else 
+					decision_next = idle;
+			  end
+		start: begin
+				TxD = 0; //start bit
+				Tx_BUSY = 1;
+				if(Tx_sample_ENABLE)
+				begin
+					if(count_s == 15)
+					begin
+						add_next = 1'b0;
+						count_s_next = 0;
+						count_n_next = 0;
+						decision_next = trans;
+					end
+					else
+					begin
+						count_s_next = count_s + 4'b0001;
+					end
+				end
+				else
+					decision_next = start;
+			   end
+		trans: begin
+				TxD = buffer[0];
+				Tx_BUSY = 1;
+				if(Tx_sample_ENABLE) begin
+					if(count_s == 15)
+					begin
+						add_next = add + TxD;
+						count_s_next = 0;
+						buffer_next = buffer >> 1;
+						if(count_n == 7)
+							decision_next = parity;
+						else
+							count_n_next = count_n + 4'b0001;
+					end
+					else
+						count_s_next = count_s + 1;
+				end
+				else
+					decision_next = trans;
+			   end
+		parity: begin
+				TxD = add;
+				Tx_BUSY = 1;
+				if(Tx_sample_ENABLE) begin
+					if(count_s == 15)
+					begin
+						count_s_next = 0;
+						decision_next = stop;
+					end
+					else
+						count_s_next = count_s + 1;
+				end
+				else
+					decision_next = parity;
+				end
+		stop: begin
+				TxD = 1;
+				Tx_BUSY = 1;
+				if(Tx_sample_ENABLE) begin
+					if(count_s == 15) begin
+						decision_next = idle;
+					end
+					else
+						count_s_next = count_s + 1;
+				end
+				else
+					decision_next = stop;
+			  end
+		default: begin
+			//idle
+			decision_next = idle;
+		  end
+		endcase
+	end
+	else begin
+		//idle
+		TxD = 1;
+		Tx_BUSY = 0;
+	end
+end
+
+endmodule
