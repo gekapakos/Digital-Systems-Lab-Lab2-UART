@@ -1,11 +1,5 @@
 # Lab02: Universal Asynchronous Receiver-Transmitter (UART)
 
-**Electrical and Computer Engineering**  
-**University of Thessaly (UTH)**  
-**ECE333 - Digital Systems Lab**  
-**Fall Semester 2023-2024**  
-**Author**: Georgios Kapakos - ΑΕΜ: 03165  
-
 ## Overview
 This lab implements a UART (Universal Asynchronous Receiver-Transmitter) protocol for serial communication using Verilog on the Nexys A7-100T FPGA board. The goal is to design and verify a Transmitter (Tx) and Receiver (Rx) to transfer four 8-bit symbols (AA, 55, CC, 89) asynchronously. The system uses a 100 MHz clock, adjustable baud rates (300–115200 bps), and includes start, stop, and parity bits for data integrity.
 
@@ -41,6 +35,3 @@ This lab implements a UART (Universal Asynchronous Receiver-Transmitter) protoco
 2. Open in Vivado.
 3. Synthesize, implement, and generate bitstreams for each part.
 4. Program the Nexys A7-100T and verify with testbenches.
-
-## Conclusion
-The UART system was successfully implemented, achieving reliable asynchronous transfer of four 8-bit symbols. The baud rate controller ensured synchronization, while the Tx and Rx modules handled serialization, sampling, and error checking effectively, meeting all lab objectives.
